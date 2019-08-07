@@ -51,21 +51,22 @@ class HashTable{
 
 
   std::mutex Mutex;
-  int* PageTable;
+  int* Table;
   int  UniqueHashes;
   int  ExpectedEntries;
   int  Entries;
-  int  _ArraySize;
 
+  int  _ArraySize;
   int  UsedCells;
 
 public:
+  int  ArraySize;
 
   /*
   * @name: RunTimeHashFunction
   * @short:
   * @note: make sure types match HashTable types!
-  */
+*/
   typedef HashType (*RunTimeHashFunction)(HashType*);
   RunTimeHashFunction HashFunction;
 
@@ -88,7 +89,13 @@ public:
 * @retrun:
 */
   HashTable(int _ExpectedEntries){
-    ExpectedEntries = ExpectedEntries;
+
+    DeclaredSize = ((_ExpectedEntries > 4) ? _ExpectedEntries : 4);
+    Entries      = 0;
+    UsedCells    = 0;
+
+    _ArraySize   = ExpectedEntries << 2;
+    Table        = new Type[_Size];
   }
 
 
@@ -102,6 +109,38 @@ public:
 * @retrun:(void)
 */
   void _Extend(){
+	float Filled = (UsedCells / ArraySize);
+	if (Filled >= ((float)2/(float)3))
+	{
+		//Create New
+		int NewArraySize = UsedCells*4;
+    HashTable<Type, HashType> Temp_HashTable = HashTable<Type, HashType>(NewArraySize);
+
+		//printf("Migrating Elements\n");
+		//int NewArraySize = HashTable->ArraySize*4;
+		//Hash_t* NewTable = (Hash_t*) malloc(NewArraySize*sizeof(Hash_t));
+		DLL_Transverse(HashTable->Elements,
+			Hash_t* Hash_Element = (Hash_t*)(Node->GivenStruct);
+			if (Hash_Element->InUse)
+			{
+				printf("Adding/Moving <%d,%p>",Hash_Element->UniqueHash,Hash_Element->GivenStruct);
+				Add(Temp_HashTable,Hash_Element->UniqueHash,Hash_Element->GivenStruct);
+			}
+
+		)
+		free(HashTable->Table);
+		printf("Migrating Table\n");
+
+		printf("(%p,%p)\n",HashTable->Table,Temp_HashTable->Table);
+		//free(HashTable->Table);
+		HashTable->Table     = Temp_HashTable->Table;
+		Free_DirectStructure(HashTable->Elements);
+		HashTable->Elements  = Temp_HashTable->Elements;
+		HashTable->Entries   = Temp_HashTable->Entries;
+		HashTable->ArraySize = Temp_HashTable->ArraySize;
+		HashTable->UsedCells = Temp_HashTable->UsedCells;
+		printf("(%p,%p)\n",HashTable->Table,Temp_HashTable->Table);
+		free(Temp_HashTable);
 
   }
 
@@ -245,38 +284,28 @@ public:
 *    -1             : UniqueTag Already Exists
 *    -2             : Array Full/Unexpected Error
 */
-  HashType FindHash(Type GivenStruct)
+  inline HashType FindHash(Type GivenStruct)
   {
-    return NULL;
+    return HashFunction(GivenStruct);
   }
 
   //Get(HashTable_t* HashTable,int Hash)
   //Gets the pointer to the unique Hash value
   //Retruns:
-  // T* : Success
+  // Type* : Success
   // NULL  : Either entry doest exist, or something went wrong!
   Type* Get(HashType Hash)
   {
-/*  	int Index = Exists(HashTable,Hash);
+    int Index = Exists(Hash);
   	if (Index>=0)
   	{
-  		return (&HashTable->Table[Index])->GivenStruct;
+  		return (&Table[Index])->GivenStruct;
   	}
-  	return NULL;*/
+  	return NULL;
   }
 
 
-  //Get(HashTable_t* HashTable, char* String)
-  //Gets the pointer to the unique Hash value for the given string.
-  //Retruns:
-  // Void* : Success
-  // NULL  : Something went wrong
-  Type* Get(char* String)
-  {
-/*  	//String
-  	int hash = (int) ElfHash(String);
-  	return Get(HashTable,hash);*/
-  }
+
 
 /*
 * @fName: --
